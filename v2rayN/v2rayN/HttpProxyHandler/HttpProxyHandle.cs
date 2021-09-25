@@ -166,12 +166,10 @@ namespace v2rayN.HttpProxyHandler
                 }
                 if (type == ESysProxyType.ForcedChange)
                 {
-                    SysProxyHandle.SetIEProxy(true, true, $"{Global.Loopback}:{port}");
+                    SysProxyHandle.SetIEProxy(true, $"{Global.Loopback}:{port}", config.systemProxyExceptions);
                 }
                 else if (type == ESysProxyType.ForcedClear)
                 {
-                    //TODO To be verified
-                    Utils.RegWriteValue(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings", "ProxyEnable", 0);
                     SysProxyHandle.ResetIEProxy();
                 }
                 else if (type == ESysProxyType.Unchanged)
@@ -183,6 +181,18 @@ namespace v2rayN.HttpProxyHandler
                 Utils.SaveLog(ex.Message, ex);
             }
             return true;
+        }
+
+        public static void ResetIEProxy4WindowsShutDown()
+        {
+            try
+            {
+                //TODO To be verified
+                Utils.RegWriteValue(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings", "ProxyEnable", 0);
+            }
+            catch
+            {
+            }
         }
     }
 }

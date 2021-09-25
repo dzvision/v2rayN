@@ -189,6 +189,7 @@ namespace v2rayN.Handler
                   && v2rayConfig.routing.rules != null)
                 {
                     v2rayConfig.routing.domainStrategy = config.domainStrategy;
+                    v2rayConfig.routing.domainMatcher = config.domainMatcher;
 
                     if (config.enableRoutingAdvanced)
                     {
@@ -710,6 +711,7 @@ namespace v2rayN.Handler
                         var grpcSettings = new GrpcSettings();
 
                         grpcSettings.serviceName = config.path();
+                        grpcSettings.multiMode = (config.headerType() == Global.GrpcmultiMode ? true : false);
                         streamSettings.grpcSettings = grpcSettings;
                         break;
                     default:

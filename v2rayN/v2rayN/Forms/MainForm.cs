@@ -11,6 +11,7 @@ using v2rayN.Tool;
 using System.Diagnostics;
 using System.Drawing;
 using System.Net;
+using System.Text.RegularExpressions;
 
 namespace v2rayN.Forms
 {
@@ -19,6 +20,7 @@ namespace v2rayN.Forms
         private V2rayHandler v2rayHandler;
         private List<int> lvSelecteds = new List<int>();
         private StatisticsHandler statistics = null;
+        private string MsgFilter = string.Empty;
 
         #region Window 事件
 
@@ -33,7 +35,7 @@ namespace v2rayN.Forms
 
             Application.ApplicationExit += (sender, args) =>
             {
-                MyAppExit();
+                MyAppExit(false);
             };
         }
 
@@ -88,8 +90,10 @@ namespace v2rayN.Forms
                 case CloseReason.ApplicationExitCall:
                 case CloseReason.FormOwnerClosing:
                 case CloseReason.TaskManagerClosing:
+                    MyAppExit(false);
+                    break;
                 case CloseReason.WindowsShutDown:
-                    MyAppExit();
+                    MyAppExit(true);
                     break;
             }
         }
@@ -105,14 +109,21 @@ namespace v2rayN.Forms
 
             //}
         }
-        private void MyAppExit()
+        private void MyAppExit(bool blWindowsShutDown)
         {
             try
             {
                 v2rayHandler.V2rayStop();
 
                 //HttpProxyHandle.CloseHttpAgent(config);
-                HttpProxyHandle.UpdateSysProxy(config, true);
+                if (blWindowsShutDown)
+                {
+                    HttpProxyHandle.ResetIEProxy4WindowsShutDown();
+                }
+                else
+                {
+                    HttpProxyHandle.UpdateSysProxy(config, true);
+                }
 
                 ConfigHandler.SaveConfig(ref config);
                 statistics?.SaveToFile();
@@ -916,6 +927,13 @@ namespace v2rayN.Forms
             }
             else
             {
+                if (!Utils.IsNullOrEmpty(MsgFilter))
+                {
+                    if (!Regex.IsMatch(text,MsgFilter))
+                    {
+                        return;
+                    }
+                }
                 //this.txtMsgBox.AppendText(text);
                 ShowMsg(text);
             }
@@ -1451,7 +1469,16 @@ namespace v2rayN.Forms
             }
 
         }
-
+        private void menuMsgBoxFilter_Click(object sender, EventArgs e)
+        {
+            var fm = new MsgFilterSetForm();
+            fm.MsgFilter = MsgFilter;
+            if (fm.ShowDialog() == DialogResult.OK)
+            {
+                MsgFilter = fm.MsgFilter;
+                gbMsgTitle.Text = string.Format(UIRes.I18N("MsgInformationTitle"), MsgFilter);
+            }
+        }
         #endregion
 
     }
