@@ -41,8 +41,14 @@ namespace v2rayN.Forms
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            ConfigHandler.LoadConfig(ref config);
+            if (ConfigHandler.LoadConfig(ref config) != 0)
+            {
+                UI.ShowWarning($"Loading GUI configuration file is abnormal,please restart the application{Environment.NewLine}加载GUI配置文件异常,请重启应用");
+                Environment.Exit(0);
+                return;
+            }
             ConfigHandler.InitBuiltinRouting(ref config);
+            MainFormHandler.Instance.BackupGuiNConfig(config, true);
             v2rayHandler = new V2rayHandler();
             v2rayHandler.ProcessEvent += v2rayHandler_ProcessEvent;
 
@@ -50,6 +56,7 @@ namespace v2rayN.Forms
             {
                 statistics = new StatisticsHandler(config, UpdateStatisticsHandler);
             }
+            MainFormHandler.Instance.UpdateTask(config, UpdateTaskHandler);
         }
 
         private void MainForm_VisibleChanged(object sender, EventArgs e)
@@ -929,7 +936,7 @@ namespace v2rayN.Forms
             {
                 if (!Utils.IsNullOrEmpty(MsgFilter))
                 {
-                    if (!Regex.IsMatch(text,MsgFilter))
+                    if (!Regex.IsMatch(text, MsgFilter))
                     {
                         return;
                     }
@@ -961,7 +968,10 @@ namespace v2rayN.Forms
         /// </summary>
         private void ClearMsg()
         {
-            this.txtMsgBox.Clear();
+            txtMsgBox.Invoke((Action)delegate
+            {
+                txtMsgBox.Clear();
+            });
         }
 
         /// <summary>
@@ -1084,6 +1094,15 @@ namespace v2rayN.Forms
             }
         }
 
+        private void UpdateTaskHandler(bool success, string msg)
+        {
+            AppendText(false, msg);
+            if (success)
+            {
+                Global.reloadV2ray = true;
+                LoadV2ray();
+            }
+        }
         #endregion
 
         #region 移动服务器
@@ -1212,8 +1231,7 @@ namespace v2rayN.Forms
                 {
                     CloseV2ray();
 
-                    string fileName = Global.DownloadFileName;
-                    fileName = Utils.GetPath(fileName);
+                    string fileName = Utils.GetPath(Utils.GetDownloadFileName(msg));
                     FileManager.ZipExtractToFile(fileName, config.ignoreGeoUpdateCore ? "geo" : "");
 
                     AppendText(false, UIRes.I18N("MsgUpdateV2rayCoreSuccessfullyMore"));
