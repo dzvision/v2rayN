@@ -21,6 +21,7 @@ using System.Security.Principal;
 using v2rayN.Base;
 using Newtonsoft.Json.Linq;
 using System.Web;
+using log4net;
 
 namespace v2rayN
 {
@@ -348,37 +349,7 @@ namespace v2rayN
             return $"{string.Format("{0:f1}", result)} {unit}";
         }
 
-        public static void DedupServerList(List<Mode.VmessItem> source, out List<Mode.VmessItem> result, bool keepOlder)
-        {
-            List<Mode.VmessItem> list = new List<Mode.VmessItem>();
-            if (!keepOlder) source.Reverse(); // Remove the early items first
-
-            bool _isAdded(Mode.VmessItem o, Mode.VmessItem n)
-            {
-                return o.configVersion == n.configVersion &&
-                    o.configType == n.configType &&
-                    o.address == n.address &&
-                    o.port == n.port &&
-                    o.id == n.id &&
-                    o.alterId == n.alterId &&
-                    o.security == n.security &&
-                    o.network == n.network &&
-                    o.headerType == n.headerType &&
-                    o.requestHost == n.requestHost &&
-                    o.path == n.path &&
-                    o.streamSecurity == n.streamSecurity;
-                // skip (will remove) different remarks
-            }
-            foreach (Mode.VmessItem item in source)
-            {
-                if (!list.Exists(i => _isAdded(i, item)))
-                {
-                    list.Add(item);
-                }
-            }
-            if (!keepOlder) list.Reverse();
-            result = list;
-        }
+        
 
         public static string UrlEncode(string url)
         {
@@ -900,37 +871,14 @@ namespace v2rayN
 
         public static void SaveLog(string strContent)
         {
-            SaveLog("info", new Exception(strContent));
+            var logger = LogManager.GetLogger("Log1");
+            logger.Info(strContent);
         }
         public static void SaveLog(string strTitle, Exception ex)
         {
-            try
-            {
-                string path = Path.Combine(StartupPath(), "guiLogs");
-                string FilePath = Path.Combine(path, DateTime.Now.ToString("yyyyMMdd") + ".txt");
-                if (!Directory.Exists(path))
-                {
-                    Directory.CreateDirectory(path);
-                }
-                if (!File.Exists(FilePath))
-                {
-                    FileStream FsCreate = new FileStream(FilePath, FileMode.Create);
-                    FsCreate.Close();
-                    FsCreate.Dispose();
-                }
-                FileStream FsWrite = new FileStream(FilePath, FileMode.Append, FileAccess.Write);
-                StreamWriter SwWrite = new StreamWriter(FsWrite);
-
-                string strContent = ex.ToString();
-
-                SwWrite.WriteLine(string.Format("{0}{1}[{2}]{3}", "--------------------------------", strTitle, DateTime.Now.ToString("HH:mm:ss"), "--------------------------------"));
-                SwWrite.Write(strContent);
-                SwWrite.WriteLine(Environment.NewLine);
-                SwWrite.WriteLine(" ");
-                SwWrite.Flush();
-                SwWrite.Close();
-            }
-            catch { }
+            var logger = LogManager.GetLogger("Log2");
+            logger.Debug(strTitle);
+            logger.Debug(ex);          
         }
 
         #endregion
