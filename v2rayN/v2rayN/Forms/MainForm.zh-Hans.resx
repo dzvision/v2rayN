@@ -379,67 +379,82 @@
     <value>不改变系统代理</value>
   </data>
   <data name="menuSysAgentMode.Size" type="System.Drawing.Size, System.Drawing">
-    <value>195, 22</value>
+    <value>260, 22</value>
   </data>
   <data name="menuSysAgentMode.Text" xml:space="preserve">
     <value>系统代理</value>
   </data>
   <data name="menuRoutings.Size" type="System.Drawing.Size, System.Drawing">
-    <value>195, 22</value>
+    <value>260, 22</value>
   </data>
   <data name="menuRoutings.Text" xml:space="preserve">
     <value>路由</value>
   </data>
   <data name="menuServers.Size" type="System.Drawing.Size, System.Drawing">
-    <value>195, 22</value>
+    <value>260, 22</value>
   </data>
   <data name="menuServers.Text" xml:space="preserve">
     <value>服务器</value>
   </data>
+  <data name="menuServers2.ToolTipText" xml:space="preserve">
+    <value>服务器</value>
+  </data>
   <data name="toolStripSeparator13.Size" type="System.Drawing.Size, System.Drawing">
-    <value>192, 6</value>
+    <value>257, 6</value>
   </data>
   <data name="menuAddServers2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>195, 22</value>
+    <value>260, 22</value>
   </data>
   <data name="menuAddServers2.Text" xml:space="preserve">
     <value>从剪贴板导入批量URL</value>
   </data>
   <data name="menuScanScreen2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>195, 22</value>
+    <value>260, 22</value>
   </data>
   <data name="menuScanScreen2.Text" xml:space="preserve">
     <value>扫描屏幕上的二维码</value>
   </data>
   <data name="menuUpdateSubscriptions.Size" type="System.Drawing.Size, System.Drawing">
-    <value>195, 22</value>
+    <value>260, 22</value>
   </data>
   <data name="menuUpdateSubscriptions.Text" xml:space="preserve">
     <value>更新订阅</value>
   </data>
+  <data name="menuUpdateSubViaProxy.Size" type="System.Drawing.Size, System.Drawing">
+    <value>260, 22</value>
+  </data>
+  <data name="menuUpdateSubViaProxy.Text" xml:space="preserve">
+    <value>更新订阅(通过代理)</value>
+  </data>
   <data name="toolStripSeparator2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>192, 6</value>
+    <value>257, 6</value>
   </data>
   <data name="menuExit.Size" type="System.Drawing.Size, System.Drawing">
-    <value>195, 22</value>
+    <value>260, 22</value>
   </data>
   <data name="menuExit.Text" xml:space="preserve">
     <value>退出</value>
   </data>
   <data name="cmsMain.Size" type="System.Drawing.Size, System.Drawing">
-    <value>196, 170</value>
+    <value>261, 227</value>
   </data>
   <data name="tsbSubSetting.Size" type="System.Drawing.Size, System.Drawing">
-    <value>124, 22</value>
+    <value>180, 22</value>
   </data>
   <data name="tsbSubSetting.Text" xml:space="preserve">
     <value>订阅设置</value>
   </data>
   <data name="tsbSubUpdate.Size" type="System.Drawing.Size, System.Drawing">
-    <value>124, 22</value>
+    <value>180, 22</value>
   </data>
   <data name="tsbSubUpdate.Text" xml:space="preserve">
     <value>更新订阅</value>
+  </data>
+  <data name="tsbSubUpdateViaProxy.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="tsbSubUpdateViaProxy.Text" xml:space="preserve">
+    <value>更新订阅(通过代理)</value>
   </data>
   <data name="tsbSub.Size" type="System.Drawing.Size, System.Drawing">
     <value>61, 53</value>

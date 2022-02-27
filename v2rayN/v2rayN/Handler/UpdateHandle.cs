@@ -43,7 +43,7 @@ namespace v2rayN.Handler
             _updateFunc = update;
             var url = string.Empty;
 
-              DownloadHandle downloadHandle = null;
+            DownloadHandle downloadHandle = null;
             if (downloadHandle == null)
             {
                 downloadHandle = new DownloadHandle();
@@ -162,7 +162,7 @@ namespace v2rayN.Handler
         }
 
 
-        public void UpdateSubscriptionProcess(Config config, Action<bool, string> update)
+        public void UpdateSubscriptionProcess(Config config, bool blProxy, Action<bool, string> update)
         {
             _config = config;
             _updateFunc = update;
@@ -179,6 +179,7 @@ namespace v2rayN.Handler
             {
                 string id = config.subItem[k - 1].id.Trim();
                 string url = config.subItem[k - 1].url.Trim();
+                string userAgent = config.subItem[k - 1].userAgent.Trim();
                 string hashCode = $"{k}->";
                 if (config.subItem[k - 1].enabled == false)
                 {
@@ -203,8 +204,8 @@ namespace v2rayN.Handler
                             return;
                         }
 
-                        ConfigHandler.RemoveServerViaSubid(ref config, id);
-                        _updateFunc(false, $"{hashCode}{UIRes.I18N("MsgClearSubscription")}");
+                        //ConfigHandler.RemoveServerViaSubid(ref config, id);
+                        //_updateFunc(false, $"{hashCode}{UIRes.I18N("MsgClearSubscription")}");
                         //  RefreshServers();
                         int ret = MainFormHandler.Instance.AddBatchServers(config, result, id);
                         if (ret > 0)
@@ -227,7 +228,9 @@ namespace v2rayN.Handler
                     _updateFunc(false, args.GetException().Message);
                 };
 
-                downloadHandle3.WebDownloadString(url);
+                WebProxy webProxy = blProxy ? new WebProxy(Global.Loopback, _config.GetLocalPort(Global.InboundHttp)) : null;
+                downloadHandle3.WebDownloadString(url, webProxy, userAgent);
+
                 _updateFunc(false, $"{hashCode}{UIRes.I18N("MsgStartGettingSubscriptions")}");
             }
 
@@ -290,7 +293,7 @@ namespace v2rayN.Handler
         {
             try
             {
-                Utils.SetSecurityProtocol();
+                Utils.SetSecurityProtocol(LazyConfig.Instance.GetConfig().enableSecurityProtocolTls13);
                 WebRequestHandler webRequestHandler = new WebRequestHandler
                 {
                     AllowAutoRedirect = false

@@ -31,6 +31,8 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ServerTransportControl));
             this.gbTransport = new System.Windows.Forms.GroupBox();
             this.panTlsMore = new System.Windows.Forms.Panel();
+            this.clbAlpn = new System.Windows.Forms.CheckedListBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.txtSNI = new System.Windows.Forms.TextBox();
             this.labSNI = new System.Windows.Forms.Label();
             this.labAllowInsecure = new System.Windows.Forms.Label();
@@ -76,12 +78,30 @@
             // 
             // panTlsMore
             // 
+            this.panTlsMore.Controls.Add(this.clbAlpn);
+            this.panTlsMore.Controls.Add(this.label1);
             this.panTlsMore.Controls.Add(this.txtSNI);
             this.panTlsMore.Controls.Add(this.labSNI);
             this.panTlsMore.Controls.Add(this.labAllowInsecure);
             this.panTlsMore.Controls.Add(this.cmbAllowInsecure);
             resources.ApplyResources(this.panTlsMore, "panTlsMore");
             this.panTlsMore.Name = "panTlsMore";
+            // 
+            // clbAlpn
+            // 
+            this.clbAlpn.CheckOnClick = true;
+            resources.ApplyResources(this.clbAlpn, "clbAlpn");
+            this.clbAlpn.FormattingEnabled = true;
+            this.clbAlpn.Items.AddRange(new object[] {
+            resources.GetString("clbAlpn.Items"),
+            resources.GetString("clbAlpn.Items1")});
+            this.clbAlpn.MultiColumn = true;
+            this.clbAlpn.Name = "clbAlpn";
+            // 
+            // label1
+            // 
+            resources.ApplyResources(this.label1, "label1");
+            this.label1.Name = "label1";
             // 
             // txtSNI
             // 
@@ -123,13 +143,6 @@
             // 
             this.cmbNetwork.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbNetwork.FormattingEnabled = true;
-            this.cmbNetwork.Items.AddRange(new object[] {
-            resources.GetString("cmbNetwork.Items"),
-            resources.GetString("cmbNetwork.Items1"),
-            resources.GetString("cmbNetwork.Items2"),
-            resources.GetString("cmbNetwork.Items3"),
-            resources.GetString("cmbNetwork.Items4"),
-            resources.GetString("cmbNetwork.Items5")});
             resources.ApplyResources(this.cmbNetwork, "cmbNetwork");
             this.cmbNetwork.Name = "cmbNetwork";
             this.cmbNetwork.SelectedIndexChanged += new System.EventHandler(this.cmbNetwork_SelectedIndexChanged);
@@ -191,14 +204,6 @@
             // 
             this.cmbHeaderType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbHeaderType.FormattingEnabled = true;
-            this.cmbHeaderType.Items.AddRange(new object[] {
-            resources.GetString("cmbHeaderType.Items"),
-            resources.GetString("cmbHeaderType.Items1"),
-            resources.GetString("cmbHeaderType.Items2"),
-            resources.GetString("cmbHeaderType.Items3"),
-            resources.GetString("cmbHeaderType.Items4"),
-            resources.GetString("cmbHeaderType.Items5"),
-            resources.GetString("cmbHeaderType.Items6")});
             resources.ApplyResources(this.cmbHeaderType, "cmbHeaderType");
             this.cmbHeaderType.Name = "cmbHeaderType";
             // 
@@ -239,5 +244,7 @@
         private System.Windows.Forms.Label labHeaderType;
         private System.Windows.Forms.Label labRequestHost;
         private System.Windows.Forms.ComboBox cmbHeaderType;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.CheckedListBox clbAlpn;
     }
 }

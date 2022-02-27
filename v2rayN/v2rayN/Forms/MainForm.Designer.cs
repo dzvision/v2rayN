@@ -64,8 +64,8 @@
             this.menuExport2ServerConfig = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExport2ShareUrl = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExport2SubContent = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsbServer = new System.Windows.Forms.ToolStripDropDownButton();
             this.qrCodeControl = new v2rayN.Forms.QRCodeControl();
+            this.tsbServer = new System.Windows.Forms.ToolStripDropDownButton();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.gbMsgTitle = new System.Windows.Forms.GroupBox();
@@ -74,11 +74,14 @@
             this.menuMsgBoxSelectAll = new System.Windows.Forms.ToolStripMenuItem();
             this.menuMsgBoxCopy = new System.Windows.Forms.ToolStripMenuItem();
             this.menuMsgBoxCopyAll = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuMsgBoxClear = new System.Windows.Forms.ToolStripMenuItem();
             this.menuMsgBoxAddRoutingRule = new System.Windows.Forms.ToolStripMenuItem();
             this.menuMsgBoxFilter = new System.Windows.Forms.ToolStripMenuItem();
             this.ssMain = new System.Windows.Forms.StatusStrip();
             this.toolSslInboundInfo = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolSslBlank1 = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolSslRoutingRule = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolSslBlank2 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolSslServerSpeed = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolSslBlank4 = new System.Windows.Forms.ToolStripStatusLabel();
             this.notifyMain = new System.Windows.Forms.NotifyIcon(this.components);
@@ -89,10 +92,12 @@
             this.menuKeepNothing = new System.Windows.Forms.ToolStripMenuItem();
             this.menuRoutings = new System.Windows.Forms.ToolStripMenuItem();
             this.menuServers = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuServers2 = new System.Windows.Forms.ToolStripComboBox();
             this.toolStripSeparator13 = new System.Windows.Forms.ToolStripSeparator();
             this.menuAddServers2 = new System.Windows.Forms.ToolStripMenuItem();
             this.menuScanScreen2 = new System.Windows.Forms.ToolStripMenuItem();
             this.menuUpdateSubscriptions = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuUpdateSubViaProxy = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.menuExit = new System.Windows.Forms.ToolStripMenuItem();
             this.bgwScan = new System.ComponentModel.BackgroundWorker();
@@ -102,6 +107,7 @@
             this.tsbSub = new System.Windows.Forms.ToolStripDropDownButton();
             this.tsbSubSetting = new System.Windows.Forms.ToolStripMenuItem();
             this.tsbSubUpdate = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsbSubUpdateViaProxy = new System.Windows.Forms.ToolStripMenuItem();
             this.tsbQRCodeSwitch = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
             this.tsbSetting = new System.Windows.Forms.ToolStripDropDownButton();
@@ -129,8 +135,6 @@
             this.tsbPromotion = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator11 = new System.Windows.Forms.ToolStripSeparator();
             this.tsbClose = new System.Windows.Forms.ToolStripButton();
-            this.toolSslRoutingRule = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolSslBlank2 = new System.Windows.Forms.ToolStripStatusLabel();
             ((System.ComponentModel.ISupportInitialize)(this.scMain)).BeginInit();
             this.scMain.Panel1.SuspendLayout();
             this.scMain.Panel2.SuspendLayout();
@@ -219,7 +223,6 @@
             this.menuExport2ShareUrl,
             this.menuExport2SubContent});
             this.cmsLv.Name = "cmsLv";
-            this.cmsLv.OwnerItem = this.tsbServer;
             resources.ApplyResources(this.cmsLv, "cmsLv");
             // 
             // menuAddVmessServer
@@ -404,17 +407,17 @@
             resources.ApplyResources(this.menuExport2SubContent, "menuExport2SubContent");
             this.menuExport2SubContent.Click += new System.EventHandler(this.menuExport2SubContent_Click);
             // 
+            // qrCodeControl
+            // 
+            resources.ApplyResources(this.qrCodeControl, "qrCodeControl");
+            this.qrCodeControl.Name = "qrCodeControl";
+            // 
             // tsbServer
             // 
             this.tsbServer.DropDown = this.cmsLv;
             this.tsbServer.Image = global::v2rayN.Properties.Resources.server;
             resources.ApplyResources(this.tsbServer, "tsbServer");
             this.tsbServer.Name = "tsbServer";
-            // 
-            // qrCodeControl
-            // 
-            resources.ApplyResources(this.qrCodeControl, "qrCodeControl");
-            this.qrCodeControl.Name = "qrCodeControl";
             // 
             // splitContainer1
             // 
@@ -461,6 +464,7 @@
             this.menuMsgBoxSelectAll,
             this.menuMsgBoxCopy,
             this.menuMsgBoxCopyAll,
+            this.menuMsgBoxClear,
             this.menuMsgBoxAddRoutingRule,
             this.menuMsgBoxFilter});
             this.cmsMsgBox.Name = "cmsMsgBox";
@@ -483,6 +487,12 @@
             this.menuMsgBoxCopyAll.Name = "menuMsgBoxCopyAll";
             resources.ApplyResources(this.menuMsgBoxCopyAll, "menuMsgBoxCopyAll");
             this.menuMsgBoxCopyAll.Click += new System.EventHandler(this.menuMsgBoxCopyAll_Click);
+            // 
+            // menuMsgBoxClear
+            // 
+            this.menuMsgBoxClear.Name = "menuMsgBoxClear";
+            resources.ApplyResources(this.menuMsgBoxClear, "menuMsgBoxClear");
+            this.menuMsgBoxClear.Click += new System.EventHandler(this.menuMsgBoxClear_Click);
             // 
             // menuMsgBoxAddRoutingRule
             // 
@@ -521,6 +531,17 @@
             this.toolSslBlank1.Name = "toolSslBlank1";
             this.toolSslBlank1.Spring = true;
             // 
+            // toolSslRoutingRule
+            // 
+            this.toolSslRoutingRule.Name = "toolSslRoutingRule";
+            resources.ApplyResources(this.toolSslRoutingRule, "toolSslRoutingRule");
+            // 
+            // toolSslBlank2
+            // 
+            this.toolSslBlank2.Name = "toolSslBlank2";
+            resources.ApplyResources(this.toolSslBlank2, "toolSslBlank2");
+            this.toolSslBlank2.Spring = true;
+            // 
             // toolSslServerSpeed
             // 
             resources.ApplyResources(this.toolSslServerSpeed, "toolSslServerSpeed");
@@ -546,10 +567,12 @@
             this.menuSysAgentMode,
             this.menuRoutings,
             this.menuServers,
+            this.menuServers2,
             this.toolStripSeparator13,
             this.menuAddServers2,
             this.menuScanScreen2,
             this.menuUpdateSubscriptions,
+            this.menuUpdateSubViaProxy,
             this.toolStripSeparator2,
             this.menuExit});
             this.cmsMain.Name = "contextMenuStrip1";
@@ -594,6 +617,14 @@
             this.menuServers.Name = "menuServers";
             resources.ApplyResources(this.menuServers, "menuServers");
             // 
+            // menuServers2
+            // 
+            this.menuServers2.BackColor = System.Drawing.SystemColors.Window;
+            this.menuServers2.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.menuServers2.DropDownWidth = 500;
+            resources.ApplyResources(this.menuServers2, "menuServers2");
+            this.menuServers2.Name = "menuServers2";
+            // 
             // toolStripSeparator13
             // 
             this.toolStripSeparator13.Name = "toolStripSeparator13";
@@ -616,6 +647,12 @@
             this.menuUpdateSubscriptions.Name = "menuUpdateSubscriptions";
             resources.ApplyResources(this.menuUpdateSubscriptions, "menuUpdateSubscriptions");
             this.menuUpdateSubscriptions.Click += new System.EventHandler(this.menuUpdateSubscriptions_Click);
+            // 
+            // menuUpdateSubViaProxy
+            // 
+            this.menuUpdateSubViaProxy.Name = "menuUpdateSubViaProxy";
+            resources.ApplyResources(this.menuUpdateSubViaProxy, "menuUpdateSubViaProxy");
+            this.menuUpdateSubViaProxy.Click += new System.EventHandler(this.menuUpdateSubViaProxy_Click);
             // 
             // toolStripSeparator2
             // 
@@ -671,7 +708,8 @@
             // 
             this.tsbSub.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsbSubSetting,
-            this.tsbSubUpdate});
+            this.tsbSubUpdate,
+            this.tsbSubUpdateViaProxy});
             this.tsbSub.Image = global::v2rayN.Properties.Resources.sub;
             resources.ApplyResources(this.tsbSub, "tsbSub");
             this.tsbSub.Name = "tsbSub";
@@ -687,6 +725,12 @@
             this.tsbSubUpdate.Name = "tsbSubUpdate";
             resources.ApplyResources(this.tsbSubUpdate, "tsbSubUpdate");
             this.tsbSubUpdate.Click += new System.EventHandler(this.tsbSubUpdate_Click);
+            // 
+            // tsbSubUpdateViaProxy
+            // 
+            this.tsbSubUpdateViaProxy.Name = "tsbSubUpdateViaProxy";
+            resources.ApplyResources(this.tsbSubUpdateViaProxy, "tsbSubUpdateViaProxy");
+            this.tsbSubUpdateViaProxy.Click += new System.EventHandler(this.tsbSubUpdateViaProxy_Click);
             // 
             // tsbQRCodeSwitch
             // 
@@ -865,17 +909,6 @@
             this.tsbClose.Name = "tsbClose";
             this.tsbClose.Click += new System.EventHandler(this.tsbClose_Click);
             // 
-            // toolSslRoutingRule
-            // 
-            this.toolSslRoutingRule.Name = "toolSslRoutingRule";
-            resources.ApplyResources(this.toolSslRoutingRule, "toolSslRoutingRule");
-            // 
-            // toolSslBlank2
-            // 
-            this.toolSslBlank2.Name = "toolSslBlank2";
-            resources.ApplyResources(this.toolSslBlank2, "toolSslBlank2");
-            this.toolSslBlank2.Spring = true;
-            // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
@@ -1017,6 +1050,10 @@
         private System.Windows.Forms.ToolStripStatusLabel toolSslInboundInfo;
         private System.Windows.Forms.ToolStripStatusLabel toolSslRoutingRule;
         private System.Windows.Forms.ToolStripStatusLabel toolSslBlank2;
+        private System.Windows.Forms.ToolStripComboBox menuServers2;
+        private System.Windows.Forms.ToolStripMenuItem tsbSubUpdateViaProxy;
+        private System.Windows.Forms.ToolStripMenuItem menuUpdateSubViaProxy;
+        private System.Windows.Forms.ToolStripMenuItem menuMsgBoxClear;
     }
 }
 

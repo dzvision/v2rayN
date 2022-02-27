@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using v2rayN.Base;
-using v2rayN.HttpProxyHandler;
 
 
 namespace v2rayN.Mode
@@ -12,13 +11,7 @@ namespace v2rayN.Mode
     [Serializable]
     public class Config
     {
-        /// <summary>
-        /// 本地监听
-        /// </summary>
-        public List<InItem> inbound
-        {
-            get; set;
-        }
+        #region property
 
         /// <summary>
         /// 允许日志
@@ -45,14 +38,6 @@ namespace v2rayN.Mode
         }
 
         /// <summary>
-        /// vmess服务器信息
-        /// </summary>
-        public List<VmessItem> vmess
-        {
-            get; set;
-        }
-
-        /// <summary>
         /// 允许Mux多路复用
         /// </summary>
         public bool muxEnabled
@@ -61,32 +46,9 @@ namespace v2rayN.Mode
         }
 
         /// <summary>
-        /// KcpItem
-        /// </summary>
-        public KcpItem kcpItem
-        {
-            get; set;
-        }
-
-        /// <summary>
         /// 
         /// </summary>
         public ESysProxyType sysProxyType
-        {
-            get; set;
-        }
-
-        /// <summary>
-        /// 自定义服务器下载测速url
-        /// </summary>
-        public string speedTestUrl
-        {
-            get; set;
-        }
-        /// <summary>
-        /// 自定义“服务器真连接延迟”测试url
-        /// </summary>
-        public string speedPingTestUrl
         {
             get; set;
         }
@@ -123,7 +85,6 @@ namespace v2rayN.Mode
             get; set;
         }
 
-
         /// <summary>
         /// 自定义远程DNS
         /// </summary>
@@ -141,20 +102,6 @@ namespace v2rayN.Mode
         }
 
         /// <summary>
-        /// 订阅
-        /// </summary>
-        public List<SubItem> subItem
-        {
-            get; set;
-        }
-        /// <summary>
-        /// UI
-        /// </summary>
-        public UIItem uiItem
-        {
-            get; set;
-        }
-        /// <summary>
         /// 域名解析策略
         /// </summary>
         public string domainStrategy
@@ -166,10 +113,6 @@ namespace v2rayN.Mode
             get; set;
         }
         public int routingIndex
-        {
-            get; set;
-        }
-        public List<RoutingItem> routings
         {
             get; set;
         }
@@ -200,7 +143,66 @@ namespace v2rayN.Mode
             get; set;
         } = 0;
 
-        #region 函数
+        public bool enableSecurityProtocolTls13
+        {
+            get; set;
+        }
+        
+        #endregion
+
+        #region other entities
+
+        /// <summary>
+        /// 本地监听
+        /// </summary>
+        public List<InItem> inbound
+        {
+            get; set;
+        }
+
+        /// <summary>
+        /// vmess服务器信息
+        /// </summary>
+        public List<VmessItem> vmess
+        {
+            get; set;
+        }
+
+        /// <summary>
+        /// KcpItem
+        /// </summary>
+        public KcpItem kcpItem
+        {
+            get; set;
+        }
+
+        /// <summary>
+        /// 订阅
+        /// </summary>
+        public List<SubItem> subItem
+        {
+            get; set;
+        }
+        /// <summary>
+        /// UI
+        /// </summary>
+        public UIItem uiItem
+        {
+            get; set;
+        }
+        public List<RoutingItem> routings
+        {
+            get; set;
+        }
+
+        public ConstItem constItem
+        {
+            get; set;
+        }
+
+        #endregion
+
+        #region function
 
         public string address()
         {
@@ -257,7 +259,7 @@ namespace v2rayN.Mode
         }
         public string network()
         {
-            if (index < 0 || Utils.IsNullOrEmpty(vmess[index].network))
+            if (index < 0 || Utils.IsNullOrEmpty(vmess[index].network) || !Global.networks.Contains(vmess[index].network))
             {
                 return Global.DefaultNetwork;
             }
@@ -371,6 +373,38 @@ namespace v2rayN.Mode
             }
             return vmess[index].sni.TrimEx();
         }
+        public List<string> alpn()
+        {
+            if (index < 0)
+            {
+                return null;
+            }
+            if (vmess[index].alpn != null && vmess[index].alpn.Count > 0)
+            {
+                return vmess[index].alpn;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        public string indexId()
+        {
+            if (index < 0)
+            {
+                return string.Empty;
+            }
+            return vmess[index].indexId.TrimEx();
+        }
+        public int FindIndexId(string indexId)
+        {
+            if (string.IsNullOrEmpty(indexId))
+            {
+                return -1;
+            }
+            return vmess.FindIndex(it => it.indexId == indexId);
+        }
+        
         #endregion
 
     }
@@ -380,6 +414,7 @@ namespace v2rayN.Mode
     {
         public VmessItem()
         {
+            indexId = string.Empty;
             configVersion = 1;
             address = string.Empty;
             port = 0;
@@ -466,6 +501,10 @@ namespace v2rayN.Mode
             itemId = Utils.Base64Encode(itemId);
             return itemId;
         }
+        public string indexId
+        {
+            get; set;
+        }
 
         /// <summary>
         /// 版本(现在=2)
@@ -550,7 +589,7 @@ namespace v2rayN.Mode
         }
 
         /// <summary>
-        /// 底层传输安全
+        /// 传输层安全
         /// </summary>
         public string streamSecurity
         {
@@ -601,6 +640,13 @@ namespace v2rayN.Mode
         /// tls sni
         /// </summary>
         public string sni
+        {
+            get; set;
+        }
+        /// <summary>
+        /// tls alpn
+        /// </summary>
+        public List<string> alpn
         {
             get; set;
         }
@@ -725,12 +771,23 @@ namespace v2rayN.Mode
         /// enable
         /// </summary>
         public bool enabled { get; set; } = true;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string userAgent
+        {
+            get; set;
+        } = string.Empty;
     }
 
     [Serializable]
     public class UIItem
     {
-
+        public bool enableAutoAdjustMainLvColWidth
+        {
+            get; set;
+        }
 
         public System.Drawing.Size mainSize
         {
@@ -738,6 +795,29 @@ namespace v2rayN.Mode
         }
 
         public Dictionary<string, int> mainLvColWidth
+        {
+            get; set;
+        }
+    }
+
+    [Serializable]
+    public class ConstItem
+    {
+        /// <summary>
+        /// 自定义服务器下载测速url
+        /// </summary>
+        public string speedTestUrl
+        {
+            get; set;
+        }
+        /// <summary>
+        /// 自定义“服务器真连接延迟”测试url
+        /// </summary>
+        public string speedPingTestUrl
+        {
+            get; set;
+        }
+        public string defIEProxyExceptions
         {
             get; set;
         }

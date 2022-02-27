@@ -9,9 +9,9 @@ using v2rayN.Mode;
 
 namespace v2rayN.Handler
 {
-    class MainFormHandler
+    public sealed class MainFormHandler
     {
-        private static MainFormHandler instance;
+        private static readonly Lazy<MainFormHandler> instance = new Lazy<MainFormHandler>(() => new MainFormHandler());
         Action<bool, string> _updateUI;
 
         //private DownloadHandle downloadHandle2;
@@ -22,16 +22,8 @@ namespace v2rayN.Handler
         //Action<int, string> _updateFunc;
         public static MainFormHandler Instance
         {
-            get
-            {
-                if (instance == null)
-                {
-                    instance = new MainFormHandler();
-                }
-                return instance;
-            }
+            get { return instance.Value; }
         }
-
         public Icon GetNotifyIcon(Config config, Icon def)
         {
             try
@@ -185,15 +177,16 @@ namespace v2rayN.Handler
 
         public void BackupGuiNConfig(Config config, bool auto = false)
         {
-            string fileName = string.Empty;
+            string fileName = $"guiNConfig_{DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss_fff")}.json";
             if (auto)
             {
-                fileName = Utils.GetTempPath($"guiNConfig{DateTime.Now.ToString("yyyyMMddHHmmssfff")}.json");
+                fileName = Utils.GetTempPath(fileName);
             }
             else
             {
                 SaveFileDialog fileDialog = new SaveFileDialog
                 {
+                    FileName = fileName,
                     Filter = "guiNConfig|*.json",
                     FilterIndex = 2,
                     RestoreDirectory = true

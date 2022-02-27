@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
 using v2rayN.Mode;
 
 namespace v2rayN.Handler
@@ -363,7 +365,14 @@ namespace v2rayN.Handler
                     usersItem.id = config.id();
                     usersItem.alterId = config.alterId();
                     usersItem.email = Global.userEMail;
-                    usersItem.security = config.security();
+                    if (Global.vmessSecuritys.Contains(config.security()))
+                    {
+                        usersItem.security = config.security();
+                    }
+                    else
+                    {
+                        usersItem.security = Global.DefaultSecurity;
+                    }
 
                     //Mux
                     outbound.mux.enabled = config.muxEnabled;
@@ -477,7 +486,6 @@ namespace v2rayN.Handler
                     }
                     //远程服务器用户ID
                     usersItem.id = config.id();
-                    usersItem.alterId = 0;
                     usersItem.flow = string.Empty;
                     usersItem.email = Global.userEMail;
                     usersItem.encryption = config.security();
@@ -495,7 +503,7 @@ namespace v2rayN.Handler
                     {
                         if (Utils.IsNullOrEmpty(config.flow()))
                         {
-                            usersItem.flow = "xtls-rprx-origin";
+                            usersItem.flow = Global.xtlsFlows[1];
                         }
                         else
                         {
@@ -529,13 +537,13 @@ namespace v2rayN.Handler
 
                     serversItem.ota = false;
                     serversItem.level = 1;
-                          
+
                     //if xtls
                     if (config.streamSecurity() == Global.StreamSecurityX)
                     {
                         if (Utils.IsNullOrEmpty(config.flow()))
                         {
-                            serversItem.flow = "xtls-rprx-origin";
+                            serversItem.flow = Global.xtlsFlows[1];
                         }
                         else
                         {
@@ -587,7 +595,8 @@ namespace v2rayN.Handler
 
                     TlsSettings tlsSettings = new TlsSettings
                     {
-                        allowInsecure = config.allowInsecure()
+                        allowInsecure = config.allowInsecure(),
+                        alpn = config.alpn()
                     };
                     if (!string.IsNullOrWhiteSpace(sni))
                     {
@@ -607,7 +616,8 @@ namespace v2rayN.Handler
 
                     TlsSettings xtlsSettings = new TlsSettings
                     {
-                        allowInsecure = config.allowInsecure()
+                        allowInsecure = config.allowInsecure(),
+                        alpn = config.alpn()
                     };
                     if (!string.IsNullOrWhiteSpace(sni))
                     {
@@ -1027,7 +1037,6 @@ namespace v2rayN.Handler
                 else if (config.configType() == (int)EConfigType.VLESS)
                 {
                     inbound.protocol = Global.vlessProtocolLite;
-                    usersItem.alterId = 0;
                     usersItem.flow = config.flow();
                     inbound.settings.decryption = config.security();
                 }
@@ -1385,7 +1394,7 @@ namespace v2rayN.Handler
         #region Gen speedtest config
 
 
-        public static string GenerateClientSpeedtestConfigString(Config config, List<int> selecteds, out string msg)
+        public static string GenerateClientSpeedtestConfigString(Config config, List<ServerTestItem> selecteds, out string msg)
         {
             try
             {
@@ -1416,6 +1425,12 @@ namespace v2rayN.Handler
                     msg = UIRes.I18N("FailedGenDefaultConfiguration");
                     return "";
                 }
+                List<IPEndPoint> lstIpEndPoints = null;
+                try
+                {
+                    lstIpEndPoints = new List<IPEndPoint>(IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners());
+                }
+                catch { }
 
                 log(configCopy, ref v2rayConfig, false);
                 //routing(config, ref v2rayConfig);
@@ -1424,19 +1439,44 @@ namespace v2rayN.Handler
                 v2rayConfig.inbounds.Clear(); // Remove "proxy" service for speedtest, avoiding port conflicts.
 
                 int httpPort = configCopy.GetLocalPort("speedtest");
-                foreach (int index in selecteds)
+
+                foreach (var it in selecteds)
                 {
-                    if (configCopy.vmess[index].configType == (int)EConfigType.Custom)
+                    if (it.configType == (int)EConfigType.Custom)
+                    {
+                        continue;
+                    }
+                    if (it.port <= 0)
                     {
                         continue;
                     }
 
-                    configCopy.index = index;
+                    //find unuse port
+                    var port = httpPort;
+                    for (int k = httpPort; k < 65536; k++)
+                    {
+                        if (lstIpEndPoints != null && lstIpEndPoints.FindIndex(_it => _it.Port == k) >= 0)
+                        {
+                            continue;
+                        }
+                        //found
+                        port = k;
+                        httpPort = port + 1;
+                        break;
+                    }
+
+                    //Port In Used
+                    if (lstIpEndPoints != null && lstIpEndPoints.FindIndex(_it => _it.Port == port) >= 0)
+                    {
+                        continue;
+                    }
+                    configCopy.index = it.selected;
+                    it.port = port;
 
                     Inbounds inbound = new Inbounds
                     {
                         listen = Global.Loopback,
-                        port = httpPort + index,
+                        port = port,
                         protocol = Global.InboundHttp
                     };
                     inbound.tag = Global.InboundHttp + inbound.port.ToString();
