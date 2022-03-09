@@ -1,9 +1,11 @@
-﻿using System;
+﻿using NHotkey;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using v2rayN.Base;
 using v2rayN.Handler;
@@ -53,7 +55,6 @@ namespace v2rayN.Forms
             {
                 statistics = new StatisticsHandler(config, UpdateStatisticsHandler);
             }
-            MainFormHandler.Instance.UpdateTask(config, UpdateTaskHandler);
         }
 
         private void MainForm_VisibleChanged(object sender, EventArgs e)
@@ -80,6 +81,8 @@ namespace v2rayN.Forms
 
             HideForm();
 
+            MainFormHandler.Instance.UpdateTask(config, UpdateTaskHandler);
+            MainFormHandler.Instance.RegisterGlobalHotkey(config, OnHotkeyHandler, UpdateTaskHandler);
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -129,6 +132,7 @@ namespace v2rayN.Forms
                     SysProxyHandle.UpdateSysProxy(config, true);
                 }
 
+                StorageUI();
                 ConfigHandler.SaveConfig(ref config);
                 statistics?.SaveToFile();
                 statistics?.Close();
@@ -161,6 +165,26 @@ namespace v2rayN.Forms
             {
                 ConfigHandler.AddformMainLvColWidth(ref config, ((EServerColName)k).ToString(), lvServers.Columns[k].Width);
             }
+        }
+
+        private void OnHotkeyHandler(object sender, HotkeyEventArgs e)
+        {
+            switch (Utils.ToInt(e.Name))
+            {
+                case (int)EGlobalHotkey.ShowForm:
+                    if (this.ShowInTaskbar) HideForm(); else ShowForm();
+                    break;
+                case (int)EGlobalHotkey.SystemProxyClear:
+                    SetListenerType(ESysProxyType.ForcedClear);
+                    break;
+                case (int)EGlobalHotkey.SystemProxySet:
+                    SetListenerType(ESysProxyType.ForcedChange);
+                    break;
+                case (int)EGlobalHotkey.SystemProxyUnchanged:
+                    SetListenerType(ESysProxyType.Unchanged);
+                    break;
+            }
+            e.Handled = true;
         }
 
         #endregion
@@ -440,7 +464,7 @@ namespace v2rayN.Forms
         /// <summary>
         /// 载入V2ray
         /// </summary>
-        private void LoadV2ray()
+        async Task LoadV2ray()
         {
             tsbReload.Enabled = false;
 
@@ -448,7 +472,11 @@ namespace v2rayN.Forms
             {
                 ClearMsg();
             }
-            v2rayHandler.LoadV2ray(config);
+            await Task.Run(() =>
+            {
+                v2rayHandler.LoadV2ray(config);
+            });
+
             Global.reloadV2ray = false;
             ConfigHandler.SaveConfig(ref config, false);
             statistics?.SaveToFile();
@@ -792,6 +820,18 @@ namespace v2rayN.Forms
             }
         }
 
+        private void tsbGlobalHotkeySetting_Click(object sender, EventArgs e)
+        {
+            var fm = new GlobalHotkeySettingForm();
+            if (fm.ShowDialog() == DialogResult.OK)
+            {
+                RefreshRoutingsMenu();
+                RefreshServers();
+                LoadV2ray();
+            }
+
+        }
+
         private void tsbReload_Click(object sender, EventArgs e)
         {
             Global.reloadV2ray = true;
@@ -800,6 +840,7 @@ namespace v2rayN.Forms
 
         private void tsbClose_Click(object sender, EventArgs e)
         {
+            StorageUI();
             HideForm();
             //this.WindowState = FormWindowState.Minimized;
         }
