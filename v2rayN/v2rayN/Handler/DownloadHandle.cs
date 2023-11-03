@@ -1,19 +1,22 @@
-﻿using System;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Sockets;
 using v2rayN.Base;
+using v2rayN.Resx;
 
 namespace v2rayN.Handler
 {
     /// <summary>
     ///Download
     /// </summary>
-    class DownloadHandle
+    internal class DownloadHandle
     {
-        public event EventHandler<ResultEventArgs> UpdateCompleted;
+        public event EventHandler<ResultEventArgs>? UpdateCompleted;
 
-        public event ErrorEventHandler Error;
-
+        public event ErrorEventHandler? Error;
 
         public class ResultEventArgs : EventArgs
         {
@@ -22,212 +25,315 @@ namespace v2rayN.Handler
 
             public ResultEventArgs(bool success, string msg)
             {
-                this.Success = success;
-                this.Msg = msg;
+                Success = success;
+                Msg = msg;
             }
         }
 
-        private int progressPercentage = -1;
-        private long totalBytesToReceive = 0;
-        private DateTime totalDatetime = new DateTime();
-        private int DownloadTimeout = -1;
-
-        public WebClientEx DownloadFileAsync(string url, WebProxy webProxy, int downloadTimeout)
+        public async Task<int> DownloadDataAsync(string url, WebProxy webProxy, int downloadTimeout, Action<bool, string> update)
         {
-            WebClientEx ws = new WebClientEx();
             try
             {
-                Utils.SetSecurityProtocol(LazyConfig.Instance.GetConfig().enableSecurityProtocolTls13);
-                UpdateCompleted?.Invoke(this, new ResultEventArgs(false, UIRes.I18N("Downloading")));
+                Utils.SetSecurityProtocol(LazyConfig.Instance.GetConfig().guiItem.enableSecurityProtocolTls13);
 
-                progressPercentage = -1;
-                totalBytesToReceive = 0;
-
-                //WebClientEx ws = new WebClientEx();
-                DownloadTimeout = downloadTimeout;
-                if (webProxy != null)
+                var progress = new Progress<string>();
+                progress.ProgressChanged += (sender, value) =>
                 {
-                    ws.Proxy = webProxy;// new WebProxy(Global.Loopback, Global.httpPort);
-                }
+                    if (update != null)
+                    {
+                        string msg = $"{value}";
+                        update(false, msg);
+                    }
+                };
 
-                ws.DownloadFileCompleted += ws_DownloadFileCompleted;
-                ws.DownloadProgressChanged += ws_DownloadProgressChanged;
-                ws.DownloadFileAsync(new Uri(url), Utils.GetPath(Utils.GetDownloadFileName(url)));
+                await DownloaderHelper.Instance.DownloadDataAsync4Speed(webProxy,
+                      url,
+                      progress,
+                      downloadTimeout);
+            }
+            catch (Exception ex)
+            {
+                update(false, ex.Message);
+                if (ex.InnerException != null)
+                {
+                    update(false, ex.InnerException.Message);
+                }
+            }
+            return 0;
+        }
+
+        public async Task DownloadFileAsync(string url, bool blProxy, int downloadTimeout)
+        {
+            try
+            {
+                Utils.SetSecurityProtocol(LazyConfig.Instance.GetConfig().guiItem.enableSecurityProtocolTls13);
+                UpdateCompleted?.Invoke(this, new ResultEventArgs(false, $"{ResUI.Downloading}   {url}"));
+
+                var progress = new Progress<double>();
+                progress.ProgressChanged += (sender, value) =>
+                {
+                    UpdateCompleted?.Invoke(this, new ResultEventArgs(value > 100, $"...{value}%"));
+                };
+
+                var webProxy = GetWebProxy(blProxy);
+                await DownloaderHelper.Instance.DownloadFileAsync(webProxy,
+                    url,
+                    Utils.GetTempPath(Utils.GetDownloadFileName(url)),
+                    progress,
+                    downloadTimeout);
             }
             catch (Exception ex)
             {
                 Utils.SaveLog(ex.Message, ex);
 
                 Error?.Invoke(this, new ErrorEventArgs(ex));
+                if (ex.InnerException != null)
+                {
+                    Error?.Invoke(this, new ErrorEventArgs(ex.InnerException));
+                }
             }
-            return ws;
         }
 
-        void ws_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
+        public async Task<string?> UrlRedirectAsync(string url, bool blProxy)
         {
-            if (UpdateCompleted != null)
+            Utils.SetSecurityProtocol(LazyConfig.Instance.GetConfig().guiItem.enableSecurityProtocolTls13);
+            var webRequestHandler = new SocketsHttpHandler
             {
-                if (totalBytesToReceive == 0)
-                {
-                    totalDatetime = DateTime.Now;
-                    totalBytesToReceive = e.BytesReceived;
-                    return;
-                }
-                totalBytesToReceive = e.BytesReceived;
+                AllowAutoRedirect = false,
+                Proxy = GetWebProxy(blProxy)
+            };
+            HttpClient client = new(webRequestHandler);
 
-                if (DownloadTimeout != -1)
-                {
-                    if ((DateTime.Now - totalDatetime).TotalSeconds > DownloadTimeout)
-                    {
-                        ((WebClientEx)sender).CancelAsync();
-                    }
-                }
-                if (progressPercentage != e.ProgressPercentage && e.ProgressPercentage % 10 == 0)
-                {
-                    progressPercentage = e.ProgressPercentage;
-                    string msg = string.Format("...{0}%", e.ProgressPercentage);
-                    UpdateCompleted(this, new ResultEventArgs(false, msg));
-                }
+            HttpResponseMessage response = await client.GetAsync(url);
+            if (response.StatusCode == HttpStatusCode.Redirect && response.Headers.Location is not null)
+            {
+                return response.Headers.Location.ToString();
+            }
+            else
+            {
+                Utils.SaveLog("StatusCode error: " + url);
+                return null;
             }
         }
-        void ws_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
+
+        public async Task<string?> TryDownloadString(string url, bool blProxy, string userAgent)
         {
             try
             {
-                if (UpdateCompleted != null)
+                var result1 = await DownloadStringAsync(url, blProxy, userAgent);
+                if (!Utils.IsNullOrEmpty(result1))
                 {
-                    if (e.Cancelled)
-                    {
-                        ((WebClientEx)sender).Dispose();
-                        TimeSpan ts = (DateTime.Now - totalDatetime);
-                        string speed = string.Format("{0} M/s", (totalBytesToReceive / ts.TotalMilliseconds / 1000).ToString("#0.0"));
-                        UpdateCompleted(this, new ResultEventArgs(true, speed.PadLeft(8, ' ')));
-                        return;
-                    }
-
-                    if (e.Error == null
-                        || Utils.IsNullOrEmpty(e.Error.ToString()))
-                    {
-                        ((WebClientEx)sender).Dispose();
-                        TimeSpan ts = (DateTime.Now - totalDatetime);
-                        string speed = string.Format("{0} M/s", (totalBytesToReceive / ts.TotalMilliseconds / 1000).ToString("#0.0"));
-                        UpdateCompleted(this, new ResultEventArgs(true, speed.PadLeft(8, ' ')));
-                    }
-                    else
-                    {
-                        throw e.Error;
-                    }
+                    return result1;
                 }
             }
             catch (Exception ex)
             {
                 Utils.SaveLog(ex.Message, ex);
-
                 Error?.Invoke(this, new ErrorEventArgs(ex));
+                if (ex.InnerException != null)
+                {
+                    Error?.Invoke(this, new ErrorEventArgs(ex.InnerException));
+                }
             }
+
+            try
+            {
+                var result2 = await DownloadStringViaDownloader(url, blProxy, userAgent);
+                if (!Utils.IsNullOrEmpty(result2))
+                {
+                    return result2;
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.SaveLog(ex.Message, ex);
+                Error?.Invoke(this, new ErrorEventArgs(ex));
+                if (ex.InnerException != null)
+                {
+                    Error?.Invoke(this, new ErrorEventArgs(ex.InnerException));
+                }
+            }
+
+            try
+            {
+                using var wc = new WebClient();
+                wc.Proxy = GetWebProxy(blProxy);
+                var result3 = await wc.DownloadStringTaskAsync(url);
+                if (!Utils.IsNullOrEmpty(result3))
+                {
+                    return result3;
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.SaveLog(ex.Message, ex);
+                Error?.Invoke(this, new ErrorEventArgs(ex));
+                if (ex.InnerException != null)
+                {
+                    Error?.Invoke(this, new ErrorEventArgs(ex.InnerException));
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
         /// DownloadString
-        /// </summary> 
+        /// </summary>
         /// <param name="url"></param>
-        public void WebDownloadString(string url, WebProxy webProxy, string userAgent)
+        public async Task<string?> DownloadStringAsync(string url, bool blProxy, string userAgent)
         {
-            string source = string.Empty;
             try
             {
-                Utils.SetSecurityProtocol(LazyConfig.Instance.GetConfig().enableSecurityProtocolTls13);
-
-                WebClientEx ws = new WebClientEx();
-                if (webProxy != null)
+                Utils.SetSecurityProtocol(LazyConfig.Instance.GetConfig().guiItem.enableSecurityProtocolTls13);
+                var webProxy = GetWebProxy(blProxy);
+                var client = new HttpClient(new SocketsHttpHandler()
                 {
-                    ws.Proxy = webProxy;
-                }
+                    Proxy = webProxy,
+                    UseProxy = webProxy != null
+                });
 
                 if (Utils.IsNullOrEmpty(userAgent))
                 {
-                    userAgent = $"{Utils.GetVersion(false)}";
+                    userAgent = Utils.GetVersion(false);
                 }
-                ws.Headers.Add("user-agent", userAgent);
+                client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent);
 
-                ws.DownloadStringCompleted += Ws_DownloadStringCompleted;
-                ws.DownloadStringAsync(new Uri(url));
+                Uri uri = new(url);
+                //Authorization Header
+                if (!Utils.IsNullOrEmpty(uri.UserInfo))
+                {
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Utils.Base64Encode(uri.UserInfo));
+                }
+
+                using var cts = new CancellationTokenSource();
+                var result = await HttpClientHelper.Instance.GetAsync(client, url, cts.Token).WaitAsync(TimeSpan.FromSeconds(30), cts.Token);
+                return result;
             }
             catch (Exception ex)
             {
                 Utils.SaveLog(ex.Message, ex);
-            }
-        }
-
-        private void Ws_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
-        {
-            try
-            {
-                if (e.Error == null
-                    || Utils.IsNullOrEmpty(e.Error.ToString()))
-                {
-                    string source = e.Result;
-                    UpdateCompleted?.Invoke(this, new ResultEventArgs(true, source));
-                }
-                else
-                {
-                    throw e.Error;
-                }
-            }
-            catch (Exception ex)
-            {
-                Utils.SaveLog(ex.Message, ex);
-
                 Error?.Invoke(this, new ErrorEventArgs(ex));
+                if (ex.InnerException != null)
+                {
+                    Error?.Invoke(this, new ErrorEventArgs(ex.InnerException));
+                }
             }
+            return null;
         }
 
-        public string WebDownloadStringSync(string url)
+        /// <summary>
+        /// DownloadString
+        /// </summary>
+        /// <param name="url"></param>
+        public async Task<string?> DownloadStringViaDownloader(string url, bool blProxy, string userAgent)
         {
-            string source = string.Empty;
             try
             {
-                Utils.SetSecurityProtocol(LazyConfig.Instance.GetConfig().enableSecurityProtocolTls13);
+                Utils.SetSecurityProtocol(LazyConfig.Instance.GetConfig().guiItem.enableSecurityProtocolTls13);
 
-                WebClientEx ws = new WebClientEx();
+                var webProxy = GetWebProxy(blProxy);
 
-                return ws.DownloadString(new Uri(url));
+                if (Utils.IsNullOrEmpty(userAgent))
+                {
+                    userAgent = Utils.GetVersion(false);
+                }
+                var result = await DownloaderHelper.Instance.DownloadStringAsync(webProxy, url, userAgent, 30);
+                return result;
             }
             catch (Exception ex)
             {
                 Utils.SaveLog(ex.Message, ex);
-                return string.Empty;
+                Error?.Invoke(this, new ErrorEventArgs(ex));
+                if (ex.InnerException != null)
+                {
+                    Error?.Invoke(this, new ErrorEventArgs(ex.InnerException));
+                }
             }
+            return null;
         }
 
-        public WebClientEx DownloadDataAsync(string url, WebProxy webProxy, int downloadTimeout)
+        public async Task<int> RunAvailabilityCheck(IWebProxy? webProxy)
         {
-            WebClientEx ws = new WebClientEx();
             try
             {
-                Utils.SetSecurityProtocol(LazyConfig.Instance.GetConfig().enableSecurityProtocolTls13);
-                UpdateCompleted?.Invoke(this, new ResultEventArgs(false, UIRes.I18N("Downloading")));
-
-                progressPercentage = -1;
-                totalBytesToReceive = 0;
-
-                DownloadTimeout = downloadTimeout;
-                if (webProxy != null)
+                if (webProxy == null)
                 {
-                    ws.Proxy = webProxy;
+                    webProxy = GetWebProxy(true);
                 }
 
-                ws.DownloadProgressChanged += ws_DownloadProgressChanged;
-                ws.DownloadDataCompleted += ws_DownloadFileCompleted;
-                ws.DownloadDataAsync(new Uri(url));
+                try
+                {
+                    var config = LazyConfig.Instance.GetConfig();
+                    int responseTime = await GetRealPingTime(config.speedTestItem.speedPingTestUrl, webProxy, 10);
+                    return responseTime;
+                }
+                catch (Exception ex)
+                {
+                    Utils.SaveLog(ex.Message, ex);
+                    return -1;
+                }
             }
             catch (Exception ex)
             {
                 Utils.SaveLog(ex.Message, ex);
-
-                Error?.Invoke(this, new ErrorEventArgs(ex));
+                return -1;
             }
-            return ws;
+        }
+
+        public async Task<int> GetRealPingTime(string url, IWebProxy? webProxy, int downloadTimeout)
+        {
+            int responseTime = -1;
+            try
+            {
+                Stopwatch timer = Stopwatch.StartNew();
+
+                using var cts = new CancellationTokenSource();
+                cts.CancelAfter(TimeSpan.FromSeconds(downloadTimeout));
+                using var client = new HttpClient(new SocketsHttpHandler()
+                {
+                    Proxy = webProxy,
+                    UseProxy = webProxy != null
+                });
+                await client.GetAsync(url, cts.Token);
+
+                responseTime = timer.Elapsed.Milliseconds;
+            }
+            catch (Exception ex)
+            {
+                //Utils.SaveLog(ex.Message, ex);
+            }
+            return responseTime;
+        }
+
+        private WebProxy? GetWebProxy(bool blProxy)
+        {
+            if (!blProxy)
+            {
+                return null;
+            }
+            var httpPort = LazyConfig.Instance.GetLocalPort(Global.InboundHttp);
+            if (!SocketCheck(Global.Loopback, httpPort))
+            {
+                return null;
+            }
+
+            return new WebProxy(Global.Loopback, httpPort);
+        }
+
+        private bool SocketCheck(string ip, int port)
+        {
+            try
+            {
+                IPEndPoint point = new(IPAddress.Parse(ip), port);
+                using Socket? sock = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                sock.Connect(point);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }
